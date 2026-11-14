@@ -34,21 +34,20 @@ darr_hdr_t *darr_grow(darr_hdr_t *darr_hdr, size_t new_size) {
   darr_hdr =
       realloc(darr_hdr, sizeof(darr_hdr_t) + ((new_size * darr_hdr->stride)));
   darr_hdr->size = new_size;
-  memset(darr_hdr->data + sizeof(darr_hdr_t) +
-             (darr_hdr->stride * darr_hdr->length),
-         0, darr_hdr->size - darr_hdr->length);
+  memset(darr_hdr->data + (darr_hdr->stride * darr_hdr->length), 0,
+         (darr_hdr->size - darr_hdr->length) * darr_hdr->stride);
   return darr_hdr;
 }
 
-darray darradd(darray darr, void *element) {
+darray darradd(darray darr, size_t item_count, void *item) {
   darr_hdr_t *darr_hdr = hdr_from_darr(darr);
 
-  if (darr_hdr->length + 1 > darr_hdr->size) {
-    darr_hdr = darr_grow(darr_hdr, darr_hdr->size * 2);
+  if (darr_hdr->length + item_count > darr_hdr->size) {
+    darr_hdr = darr_grow(darr_hdr, (darr_hdr->size * 2) + item_count);
   }
 
-  memcpy(element, darr_hdr->data + (darr_hdr->length * darr_hdr->stride),
-         darr_hdr->stride);
-  darr_hdr->length++;
+  memcpy(darr_hdr->data + (darr_hdr->length * darr_hdr->stride), item,
+         darr_hdr->stride * item_count);
+  darr_hdr->length += item_count;
   return darr_hdr->data;
 }
