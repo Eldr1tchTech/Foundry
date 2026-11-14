@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
   darr_foreach(cmd, elem) { printf("%s\n", *elem); }
 
   run_command(cmd);
+
   darrfree(cmd);
 
   return 0;
