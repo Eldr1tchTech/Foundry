@@ -31,12 +31,20 @@ bool is_stale(const char *src, const char *bin);
 char **glob_into(char **darr, const char *pattern);
 
 // ==== Command Handling =============================
-typedef enum OUTPUT_KIND { OUTPUT_KIND_EXE } OUTPUT_KIND;
+typedef enum OUTPUT_KIND {
+  OUTPUT_KIND_EXE,
+  OUTPUT_KIND_SHARED_LIB
+} OUTPUT_KIND;
 
 typedef struct project_t {
   OUTPUT_KIND kind;
-  char **sources_darr;
   char **flags_darr;
+  char **defines_darr;
+  char **include_paths_darr;
+  char **sources_darr;
+  char **link_paths_darr;
+  char **libs_darr;
+  char *output;
 } project_t;
 
 char **build_command(char **darr, project_t p);
@@ -44,6 +52,7 @@ bool run_command(char **cmd);
 
 #endif
 
+#define FOUNDRY_BUILD_IMPLEMENTATION
 #ifdef FOUNDRY_BUILD_IMPLEMENTATION
 
 // ==== Dynamic Array ================================
@@ -75,8 +84,8 @@ void darrfree(darray darr) { free(hdr_from_darr(darr)); }
 size_t darrlen(darray darr) { return hdr_from_darr(darr)->length; }
 
 darr_hdr_t *darr_grow(darr_hdr_t *darr_hdr, size_t new_size) {
-  darr_hdr =
-      realloc(darr_hdr, sizeof(darr_hdr_t) + ((new_size * darr_hdr->stride)));
+  darr_hdr = (darr_hdr_t *)realloc(
+      darr_hdr, sizeof(darr_hdr_t) + ((new_size * darr_hdr->stride)));
   darr_hdr->size = new_size;
   memset(darr_hdr->data + (darr_hdr->stride * darr_hdr->length), 0,
          (darr_hdr->size - darr_hdr->length) * darr_hdr->stride);
@@ -195,5 +204,33 @@ char **glob_into(char **darr, const char *pattern) {
   free(base);
   return darr;
 }
+
+// ==== Command Handling =============================
+char **build_command(char **darr, project_t p) {
+  char *a = strdup("cc");
+  darr = (char **)darradd(darr, 1, &a);
+
+  if (p.kind == OUTPUT_KIND_SHARED_LIB) {
+    // Shared Lib stuff
+    a = strdup("-fPIC");
+    darr = (char **)darradd(darr, 1, &a);
+    a = strdup("-shared");
+    darr = (char **)darradd(darr, 1, &a);
+  } else if (p.kind == OUTPUT_KIND_EXE) {
+    // TODO:
+  }
+
+  // Add sources
+  darr = (char **)darradd(darr, darrlen(p.sources_darr), p.sources_darr);
+
+  a = strdup("-o");
+  darr = (char **)darradd(darr, 1, &a);
+
+  darr = (char **)darradd(darr, 1, &p.output);
+
+  return darr;
+}
+
+bool run_command(char **cmd) {}
 
 #endif

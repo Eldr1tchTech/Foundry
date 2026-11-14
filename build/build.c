@@ -12,17 +12,24 @@ int main(int argc, char **argv) {
     }
   }
 
+  // Flags
+  char **flags = darrnew(16, sizeof(char *));
+  char *f[2] = {"-Wall", "-Werror"};
+  darradd(flags, 2, &f);
+
+  // Sources
   char **srcs = darrnew(16, sizeof(char *));
   srcs = glob_into(srcs, "core/**/*.c");
 
-  darr_foreach(srcs, elem) { printf("%s\n", *elem); }
-
-  project_t p = {.kind = OUTPUT_KIND_EXE,
+  project_t p = {.kind = OUTPUT_KIND_SHARED_LIB,
                  .sources_darr = srcs,
-                 .flags_darr = darradd(darrnew(16, sizeof(char *)), 2,
-                                       (char *[]){"-Wall", "-Werror"})};
+                 .flags_darr = flags,
+                 .output = strdup("build/bin/libfoundry.so")};
 
   char **cmd = build_command(darrnew(16, sizeof(char *)), p);
+
+  darr_foreach(cmd, elem) { printf("%s\n", *elem); }
+
   run_command(cmd);
   darrfree(cmd);
 
