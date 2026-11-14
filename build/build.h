@@ -22,6 +22,10 @@ void darrfree(darray darr);
 size_t darrlen(darray darr);
 darray darradd(darray darr, size_t item_count, void *item);
 
+#define darr_foreach(darr, elem)                                               \
+  for (typeof(darr) elem = (darr), elem##_end = elem + *darrlen(darr);         \
+       elem != elem##_end; elem++)
+
 // ==== Rebuild Logic ================================
 bool is_stale(const char *src, const char *bin);
 
@@ -42,7 +46,6 @@ bool run_command(char **cmd);
 
 #endif
 
-#define FOUNDRY_BUILD_IMPLEMENTATION
 #ifdef FOUNDRY_BUILD_IMPLEMENTATION
 
 // ==== Dynamic Array ================================
@@ -115,7 +118,8 @@ bool is_stale(const char *src, const char *bin) {
 }
 
 // ==== Globbing =====================================
-char **collect_files(char **darr, char *dir) {
+char **collect_files_conditional(char **darr, char *dir,
+                                 bool (*fn)(char *pattern)) {
   DIR *d = opendir(dir);
   if (!d) {
     printf("collect_files - failed to open directory: %s", strerror(-errno));
@@ -147,7 +151,7 @@ char **collect_files(char **darr, char *dir) {
         exit(EXIT_FAILURE);
       } else {
         char *new_dir = strdup(path);
-        darr = collect_files(darr, new_dir);
+        darr = collect_files_conditional(darr, new_dir, fn);
         free(new_dir);
       }
       break;
@@ -164,18 +168,30 @@ char **collect_files(char **darr, char *dir) {
   return darr;
 }
 
+char *glob_base(const char *pattern) {
+  size_t n = strcspn(pattern, "*?[");
+  while (n > 0 && pattern[n - 1] != '/')
+    n--;
+  if (n == 0)
+    return strdup(".");
+  return strndup(pattern, n - 1);
+}
+
+bool dot_c_fn(char *pattern) {
+  size_t len = strlen(pattern);
+  if (pattern[len - 1] == 'c' && pattern[len - 2] == '.') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 char **glob_into(char **darr, const char *pattern) {
   // collect candidate files
-  darr = collect_files(darr, "/");
-
-  // filter darray
-  char **filtered_darr = (char**)darrnew(16, sizeof(char *));
-  darr_foreach(darr, elem) {
-    // add files that match the rule
-  }
-
-  darrfree(darr);
-  return filtered_darr;
+  char *base = glob_base(pattern);
+  darr = collect_files_conditional(darr, base, dot_c_fn);
+  free(base);
+  return darr;
 }
 
 #endif

@@ -15,6 +15,10 @@ int main(int argc, char **argv) {
   char** srcs = darrnew(16, sizeof(char*));
   srcs = glob_into(srcs, "core/**/*.c");
 
+  darr_foreach(srcs, elem) {
+    printf("%s\n", elem);
+  }
+
   project_t p = {.kind = OUTPUT_KIND_EXE,
                  .sources_darr = srcs,
                  .flags_darr = darradd(darrnew(16, sizeof(char *)), 2,
