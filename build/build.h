@@ -1,8 +1,6 @@
 #ifndef FOUNDRY_BUILD_H
 #define FOUNDRY_BUILD_H
 
-#define _POSIX_C_SOURCE 200809L
-
 #include <dirent.h>
 #include <errno.h>
 #include <linux/limits.h>
@@ -23,7 +21,7 @@ size_t darrlen(darray darr);
 darray darradd(darray darr, size_t item_count, void *item);
 
 #define darr_foreach(darr, elem)                                               \
-  for (typeof(darr) elem = (darr), elem##_end = elem + *darrlen(darr);         \
+  for (typeof(darr) elem = (darr), elem##_end = elem + darrlen(darr);          \
        elem != elem##_end; elem++)
 
 // ==== Rebuild Logic ================================
@@ -77,12 +75,11 @@ void darrfree(darray darr) { free(hdr_from_darr(darr)); }
 size_t darrlen(darray darr) { return hdr_from_darr(darr)->length; }
 
 darr_hdr_t *darr_grow(darr_hdr_t *darr_hdr, size_t new_size) {
-  darr_hdr = (darr_hdr_t *)realloc(
-      darr_hdr, sizeof(darr_hdr_t) + ((new_size * darr_hdr->stride)));
+  darr_hdr =
+      realloc(darr_hdr, sizeof(darr_hdr_t) + ((new_size * darr_hdr->stride)));
   darr_hdr->size = new_size;
-  memset(darr_hdr->data + sizeof(darr_hdr_t) +
-             (darr_hdr->stride * darr_hdr->length),
-         0, darr_hdr->size - darr_hdr->length);
+  memset(darr_hdr->data + (darr_hdr->stride * darr_hdr->length), 0,
+         (darr_hdr->size - darr_hdr->length) * darr_hdr->stride);
   return darr_hdr;
 }
 
@@ -136,13 +133,17 @@ char **collect_files_conditional(char **darr, char *dir,
 
     switch (e->d_type) {
     case DT_REG:
-      n = snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
-      if (n < 0 || n >= sizeof(path)) {
-        printf("collect_files - snprintf failed: %s", strerror(-errno));
-        exit(EXIT_FAILURE);
-      } else {
-        darr = (char **)darradd(darr, 1, strdup(path));
+      if (fn(e->d_name)) {
+        n = snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+        if (n < 0 || n >= sizeof(path)) {
+          printf("collect_files - snprintf failed: %s", strerror(-errno));
+          exit(EXIT_FAILURE);
+        } else {
+          char *s = strdup(path);
+          darr = (char **)darradd(darr, 1, &s);
+        }
       }
+
       break;
     case DT_DIR:
       n = snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
@@ -168,6 +169,7 @@ char **collect_files_conditional(char **darr, char *dir,
   return darr;
 }
 
+// TODO: go over this
 char *glob_base(const char *pattern) {
   size_t n = strcspn(pattern, "*?[");
   while (n > 0 && pattern[n - 1] != '/')
