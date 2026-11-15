@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/util/logger.h"
+#include <util/logger.h>
 
 bool logger_tests() {
     LOG_FATAL("test");

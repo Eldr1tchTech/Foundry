@@ -65,10 +65,11 @@ void build_tests() {
 void project_run() {}
 
 int main(int argc, char **argv) {
-  printf("is_stale: %i\n", is_stale("build/build.c", "build/build"));
+  rebuild_if_stale();
 
   if (argc > 1) {
     if (strcmp(argv[1], "clean") == 0) {
+      // TODO: Needed for incremental builds
     }
   } else {
     printf("Building Library...\n");

@@ -19,7 +19,8 @@ darray darrnew(size_t size, size_t stride);
 void darrfree(darray darr);
 size_t darrlen(darray darr);
 darray darradd(darray darr, size_t item_count, void *item);
-#define darradddarr(darr, addition) darr = darradd(darr, darrlen(addition), addition)
+#define darradddarr(darr, addition)                                            \
+  darr = darradd(darr, darrlen(addition), addition)
 
 #define darr_foreach(darr, elem)                                               \
   for (typeof(darr) elem = (darr), elem##_end = elem + darrlen(darr);          \
@@ -27,6 +28,7 @@ darray darradd(darray darr, size_t item_count, void *item);
 
 // ==== Rebuild Logic ================================
 bool is_stale(const char *src, const char *bin);
+void rebuild_if_stale();
 
 // ==== Globbing =====================================
 char **glob_into(char **darr, const char *pattern);
@@ -124,6 +126,23 @@ bool is_stale(const char *src, const char *bin) {
   return s.st_mtim.tv_nsec > b.st_mtim.tv_nsec;
 }
 
+void rebuild_if_stale() {
+  if (is_stale("build/build.c", "build/build")) {
+    printf("Stale - Rebuilding\n");
+
+    char **rebuild_cmd_darr = darrnew(8, sizeof(char *));
+    char *rebuild_cmd[] = {"cc", "build/build.c", "-o", "build/build"};
+    rebuild_cmd_darr = darradd(
+        rebuild_cmd_darr, sizeof(rebuild_cmd) / sizeof(typeof(*rebuild_cmd)),
+        &rebuild_cmd);
+
+    run_command(rebuild_cmd_darr);
+    darrfree(rebuild_cmd_darr);
+  } else {
+    printf("Current\n");
+  }
+}
+
 // ==== Globbing =====================================
 char **collect_files_conditional(char **darr, char *dir,
                                  bool (*fn)(char *pattern)) {
@@ -218,17 +237,21 @@ char **build_command(char **darr, project_t p) {
     a = strdup("-shared");
     darr = darradd(darr, 1, &a);
   } else if (p.kind == OUTPUT_KIND_EXE) {
-    darr = darradddarr(darr, p.flags_darr);
-    darr = darradddarr(darr, p.defines_darr);
-    darr = darradddarr(darr, p.include_paths_darr);
-
+    if (p.flags_darr)
+      darr = darradddarr(darr, p.flags_darr);
+    if (p.defines_darr)
+      darr = darradddarr(darr, p.defines_darr);
+    if (p.include_paths_darr)
+      darr = darradddarr(darr, p.include_paths_darr);
   }
 
   darr = darradddarr(darr, p.sources_darr);
 
   if (p.kind == OUTPUT_KIND_EXE) {
-    darr = darradddarr(darr, p.link_paths_darr);
-    darr = darradddarr(darr, p.libs_darr);
+    if (p.link_paths_darr)
+      darr = darradddarr(darr, p.link_paths_darr);
+    if (p.libs_darr)
+      darr = darradddarr(darr, p.libs_darr);
   }
 
   a = strdup("-o");
@@ -243,7 +266,7 @@ bool run_command(char **cmd) {
   // execvp requires a NULL-terminated argv. Copy rather than mutate the darray,
   // since it only has a trailing NULL if length < size.
   size_t n = darrlen(cmd);
-  char **argv = (char**)malloc((n + 1) * sizeof(char *));
+  char **argv = (char **)malloc((n + 1) * sizeof(char *));
   if (!argv)
     return false;
   memcpy(argv, cmd, n * sizeof(char *));
