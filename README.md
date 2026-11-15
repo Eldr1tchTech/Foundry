@@ -7,6 +7,7 @@ A C base layer, has the basic tools needed for most if not any project you will 
 - Wayland and Vulkan for Kiln
 
 ## Features
+- Build System
 - Hashmap
 - Dynamic Array
 - Async IO
@@ -18,6 +19,3 @@ A C base layer, has the basic tools needed for most if not any project you will 
 - Strings (sds)
 - Linked List
 - Test Suite
-
-### Upcoming
-- Custom build system

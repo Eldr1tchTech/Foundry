@@ -4,38 +4,10 @@
     {
       "label": "build: debug",
       "type": "shell",
-      "command": "make debug",
+      "command": "./build/build",
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": "$gcc",
       "presentation": { "reveal": "silent", "clear": true }
     },
-    {
-      "label": "build: release",
-      "type": "shell",
-      "command": "make release",
-      "group": "build",
-      "problemMatcher": "$gcc"
-    },
-    {
-      "label": "clean",
-      "type": "shell",
-      "command": "make clean",
-      "problemMatcher": []
-    },
-    {
-      "label": "run: tests (debug)",
-      "type": "shell",
-      "command": "${workspaceFolder}/build/debug/foundry_tests",
-      "dependsOn": "build: debug",
-      "group": { "kind": "test", "isDefault": true },
-      "options": {
-        "env": {
-          "ASAN_OPTIONS": "detect_leaks=1:abort_on_error=0",
-          "UBSAN_OPTIONS": "print_stacktrace=1"
-        }
-      },
-      "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
-    }
   ]
 }

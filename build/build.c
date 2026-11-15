@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int build_core_lib() {
+void build_core_lib() {
   char **srcs = darrnew(16, sizeof(char *));
   srcs = glob_into(srcs, "core/**/*.c");
 

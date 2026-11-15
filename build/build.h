@@ -138,6 +138,8 @@ void rebuild_if_stale() {
 
     run_command(rebuild_cmd_darr);
     darrfree(rebuild_cmd_darr);
+
+    execv("build/build", NULL);
   } else {
     printf("Current\n");
   }
@@ -263,8 +265,6 @@ char **build_command(char **darr, project_t p) {
 }
 
 bool run_command(char **cmd) {
-  // execvp requires a NULL-terminated argv. Copy rather than mutate the darray,
-  // since it only has a trailing NULL if length < size.
   size_t n = darrlen(cmd);
   char **argv = (char **)malloc((n + 1) * sizeof(char *));
   if (!argv)
@@ -280,10 +280,9 @@ bool run_command(char **cmd) {
   }
 
   if (pid == 0) {
-    // child: only returns if exec failed
     execvp(argv[0], argv);
     perror("run_command - execvp");
-    _exit(127); // _exit, not exit: don't flush the parent's stdio buffers twice
+    _exit(127);
   }
 
   free(argv);
