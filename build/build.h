@@ -19,6 +19,7 @@ darray darrnew(size_t size, size_t stride);
 void darrfree(darray darr);
 size_t darrlen(darray darr);
 darray darradd(darray darr, size_t item_count, void *item);
+#define darradddarr(darr, addition) darr = darradd(darr, darrlen(addition), addition)
 
 #define darr_foreach(darr, elem)                                               \
   for (typeof(darr) elem = (darr), elem##_end = elem + darrlen(darr);          \
@@ -149,7 +150,7 @@ char **collect_files_conditional(char **darr, char *dir,
           exit(EXIT_FAILURE);
         } else {
           char *s = strdup(path);
-          darr = (char **)darradd(darr, 1, &s);
+          darr = darradd(darr, 1, &s);
         }
       }
 
@@ -208,25 +209,32 @@ char **glob_into(char **darr, const char *pattern) {
 // ==== Command Handling =============================
 char **build_command(char **darr, project_t p) {
   char *a = strdup("cc");
-  darr = (char **)darradd(darr, 1, &a);
+  darr = darradd(darr, 1, &a);
 
   if (p.kind == OUTPUT_KIND_SHARED_LIB) {
     // Shared Lib stuff
     a = strdup("-fPIC");
-    darr = (char **)darradd(darr, 1, &a);
+    darr = darradd(darr, 1, &a);
     a = strdup("-shared");
-    darr = (char **)darradd(darr, 1, &a);
+    darr = darradd(darr, 1, &a);
   } else if (p.kind == OUTPUT_KIND_EXE) {
-    // TODO:
+    darr = darradddarr(darr, p.flags_darr);
+    darr = darradddarr(darr, p.defines_darr);
+    darr = darradddarr(darr, p.include_paths_darr);
+
   }
 
-  // Add sources
-  darr = (char **)darradd(darr, darrlen(p.sources_darr), p.sources_darr);
+  darr = darradddarr(darr, p.sources_darr);
+
+  if (p.kind == OUTPUT_KIND_EXE) {
+    darr = darradddarr(darr, p.link_paths_darr);
+    darr = darradddarr(darr, p.libs_darr);
+  }
 
   a = strdup("-o");
-  darr = (char **)darradd(darr, 1, &a);
+  darr = darradd(darr, 1, &a);
 
-  darr = (char **)darradd(darr, 1, &p.output);
+  darr = darradd(darr, 1, &p.output);
 
   return darr;
 }
