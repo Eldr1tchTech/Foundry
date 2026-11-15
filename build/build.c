@@ -23,7 +23,7 @@ void build_core_lib() {
 
 void build_tests() {
   char **flags = darrnew(4, sizeof(char *));
-  char *f[2] = {"-Wall", "-Werror"};
+  char *f[3] = {"-Wall", "-Werror", "-Wl,-rpath,$ORIGIN"};
   darradd(flags, sizeof(f) / sizeof(typeof(*f)), &f);
 
   // Sources
@@ -62,7 +62,14 @@ void build_tests() {
   free(p.output);
 }
 
-void project_run() {}
+void project_run() {
+  char **run_project_darr = darrnew(4, sizeof(char *));
+  char *r[1] = {"./build/bin/foundrytests"};
+  darradd(run_project_darr, sizeof(r) / sizeof(typeof(*r)), &r);
+
+  run_command(run_project_darr);
+  darrfree(run_project_darr);
+}
 
 int main(int argc, char **argv) {
   rebuild_if_stale();
