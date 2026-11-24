@@ -55,7 +55,6 @@ bool run_command(char **cmd);
 
 #endif
 
-#define FOUNDRY_BUILD_IMPLEMENTATION
 #ifdef FOUNDRY_BUILD_IMPLEMENTATION
 
 // ==== Dynamic Array ================================
@@ -127,11 +126,11 @@ bool is_stale(const char *src, const char *bin) {
 }
 
 void rebuild_if_stale() {
-  if (is_stale("build/build.c", "build/build")) {
+  if (is_stale("build/build.c", "build/bin/build")) {
     printf("Stale - Rebuilding\n");
 
     char **rebuild_cmd_darr = darrnew(8, sizeof(char *));
-    char *rebuild_cmd[] = {"cc", "build/build.c", "-o", "build/build"};
+    char *rebuild_cmd[] = {"cc", "build/build.c", "-o", "build/bin/build"};
     rebuild_cmd_darr = darradd(
         rebuild_cmd_darr, sizeof(rebuild_cmd) / sizeof(typeof(*rebuild_cmd)),
         &rebuild_cmd);
@@ -139,7 +138,7 @@ void rebuild_if_stale() {
     run_command(rebuild_cmd_darr);
     darrfree(rebuild_cmd_darr);
 
-    execv("build/build", NULL);
+    execv("build/bin/build", NULL);
   } else {
     printf("Current\n");
   }

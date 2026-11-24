@@ -7,7 +7,7 @@
 
 void build_core_lib() {
   char **srcs = darrnew(16, sizeof(char *));
-  srcs = glob_into(srcs, "core/**/*.c");
+  srcs = glob_into(srcs, "baselayer/src/**/*.c");
 
   project_t p = {.kind = OUTPUT_KIND_SHARED_LIB,
                  .sources_darr = srcs,
@@ -28,7 +28,7 @@ void build_tests() {
 
   // Sources
   char **srcs = darrnew(16, sizeof(char *));
-  srcs = glob_into(srcs, "tests/**/*.c");
+  srcs = glob_into(srcs, "tests/src/**/*.c");
 
   // Include paths
   char **include_paths = darrnew(4, sizeof(char *));
